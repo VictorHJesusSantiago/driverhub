@@ -39,12 +39,15 @@ class _Api:
         }
 
     def dashboard(self) -> Dict[str, Any]:
+        problems = [d for d in self.db.list_devices() if d.get("status") == "problem"]
         return {
             "stats": self.db.stats(),
             "drivers_classes": _top(db_drivers_class_counts(self.db), 12),
             "devices_kinds": _top(db_device_kind_counts(self.db), 12),
             "recent": self.db.history(limit=12),
             "os": platform.detect_os(),
+            "problems": problems[:12],
+            "problems_count": len(problems),
         }
 
     def devices(self, kind: str = "") -> Dict[str, Any]:
@@ -72,6 +75,9 @@ class _Api:
 
     def hardware(self) -> Dict[str, Any]:
         return {"hardware": platform.detect_all()}
+
+    def check(self) -> Dict[str, Any]:
+        return actions.run_check(self.db)
 
     # ---------- write (todas exigem confirm=1) ----------
     def action_scan(self) -> Dict[str, Any]:
@@ -135,10 +141,8 @@ class DriverHubHandler(BaseHTTPRequestHandler):
             self._error("not found", 404)
             return
         mt = mimetypes.guess_type(full)[0] or "application/octet-stream"
-        if mt and mt.startswith("text/") or mt in ("application/javascript",
-                                                   "application/json",
-                                                   "image/svg+xml"):
-            mt += "; charset=utf-8" if mt.startswith("text/") else ""
+        if mt.startswith("text/") or mt in ("application/javascript", "image/svg+xml"):
+            mt += "; charset=utf-8"
         with open(full, "rb") as f:
             body = f.read()
         self.send_response(200)
@@ -176,6 +180,8 @@ class DriverHubHandler(BaseHTTPRequestHandler):
                 self._json(self.api.history(int(q.get("limit", 100)), q.get("term", "")))
             elif path == "/api/hardware":
                 self._json(self.api.hardware())
+            elif path == "/api/check":
+                self._json(self.api.check())
             else:
                 self._error("endpoint não encontrado", 404)
         except Exception as exc:  # noqa: BLE001
@@ -258,6 +264,7 @@ def start_server(db: Database,
     print(f"  Local:    {via}")
     if ips:
         print(f"  Celular:  http://{ips[0]}:{port}   (mesma rede Wi-Fi)")
+        _print_qr(f"http://{ips[0]}:{port}")
     print("  Para sair: Ctrl+C")
     print("═" * 58 + "\n")
 
@@ -279,6 +286,18 @@ def _open_browser(url: str) -> None:
     import webbrowser
     try:
         webbrowser.open(url)
+    except Exception:
+        pass
+
+
+def _print_qr(url: str) -> None:
+    """Imprime um QR Code no terminal (se o pacote qrcode estiver instalado)."""
+    try:
+        import qrcode
+        qr = qrcode.QRCode(border=1)
+        qr.add_data(url)
+        qr.make()
+        print("\n".join(f"       {row}" for row in qr.get_matrix()))
     except Exception:
         pass
 

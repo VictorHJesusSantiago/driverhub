@@ -1,11 +1,8 @@
 @echo off
 REM DriverHub launcher para Windows
-setlocal
-cd /d "%~dp0"
-where python >nul 2>nul
-if errorlevel 1 (
-  echo Python nao encontrado. Instale Python 3.9+ e tente novamente.
-  exit /b 1
-)
-python -m driverhub %*
-endlocal
+REM Uso: driverhub [--elevate] <comandos...>
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$e = $args | Where-Object { $_ -eq '--elevate' }; " ^
+  "$a = $args | Where-Object { $_ -ne '--elevate' }; " ^
+  "if ($e) { Start-Process -Verb RunAs -Wait python -ArgumentList @('-m','driverhub') + $a; exit $LASTEXITCODE } " ^
+  "else { python -m driverhub @a; exit $LASTEXITCODE }" %*

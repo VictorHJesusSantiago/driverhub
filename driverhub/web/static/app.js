@@ -138,14 +138,27 @@ loaders.dashboard = async () => {
   $("#stat-cards").innerHTML = ["catalog", "devices", "drivers", "history"].map((k) =>
     `<div class="stat-card"><div class="num">${st[k] ?? 0}</div><div class="lbl">${k === "devices" ? "Dispositivos" : k === "drivers" ? "Drivers gerenciáveis" : k === "catalog" ? "Fontes oficiais" : "Operações registradas"}</div></div>`
   ).join("");
+  const probBox = document.createElement("div");
+  if (d.problems_count > 0) {
+    probBox.id = "problems-card";
+    probBox.className = "card";
+    probBox.style.borderColor = "var(--red)";
+    probBox.innerHTML = `<h3 style="color:var(--red)">⚠ ${d.problems_count} dispositivo(s) com problema</h3>`;
+    const w = table(["Tipo", "Dispositivo", "Fabricante"],
+      d.problems.map((p) => [esc(p.kind), esc(p.name), esc(p.vendor)]));
+    probBox.appendChild(w);
+  }
   renderChart("#chart-classes", d.drivers_classes);
   renderChart("#chart-kinds", d.devices_kinds);
   const recent = d.recent || [];
   $("#recent").innerHTML = "";
   $("#recent").appendChild(table(
     ["Quando", "Ação", "Alvo", "Resultado"],
-    recent.map((r) => [[esc(r.ts)], [esc(r.action)], [esc(r.target)], [esc(r.ok ? "ok" : "falha")]]),
+    recent.map((r) => [esc(r.ts), esc(r.action), esc(r.target), esc(r.ok ? "ok" : "falha")]),
   ));
+  const dv = document.querySelector("#view-dashboard");
+  const ref = dv.querySelector(".grid.two");
+  if (probBox.id) ref.before(probBox);
 };
 
 loaders.devices = async () => {

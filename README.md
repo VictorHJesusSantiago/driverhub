@@ -28,27 +28,42 @@ DriverHub é um gerenciador de drivers completo e multiplataforma, com:
 ## Instalação
 
 ```bash
+# Opção A — direto do checkout (sem instalar)
 cd driverhub
-python -m pip install -r requirements.txt   # opcional, recursos extras
+python -m driverhub --help
+
+# Opção B — instalar como pacote (gera o comando global `driverhub`)
+python -m pip install -e .            # modo desenvolvimento
+# ou
+python -m pip install .               # instalação normal
+
+# Recursos extras (opcionais: telas bonitas e métricas)
+python -m pip install -r requirements.txt
 ```
 
 ## Uso rápido
 
 ```bash
 # Terminal: ver help completo
-python -m driverhub --help
+driverhub --help            # ou: python -m driverhub --help
 
 # Terminal: escanear dispositivos e driveres do sistema
-python -m driverhub scan
+driverhub scan
 
 # Terminal: listar drivers instalados
-python -m driverhub drivers list
+driverhub drivers list
+
+# Terminal: verificar saúde (dispositivos com problema + sugestões oficiais)
+driverhub check
 
 # Terminal: atualizar o catálogo a partir das fontes oficiais
-python -m driverhub catalog update
+driverhub catalog update
+
+# Terminal: reiniciar com privilégios de administrador (UAC/pkexec/sudo)
+driverhub admin             # ou: driverhub.cmd --elevate no Windows
 
 # Interface gráfica web (abra no navegador do PC ou do celular)
-python -m driverhub web
+driverhub web
 ```
 
 ## Comandos principais (CLI)
@@ -56,23 +71,35 @@ python -m driverhub web
 | Comando | Descrição |
 | --- | --- |
 | `scan` | Detecta SO, inventário de hardware e drivers instalados |
+| `check` | Verificação de saúde: dispositivos com problema + sugestões oficiais |
 | `drivers list` | Lista drivers instalados (com detalhes) |
 | `drivers info <id>` | Detalhes de um driver |
-| `drivers install <arquivo.inf>` | Instala um driver (requer admin) |
-| `drivers update <id>` | Atualiza/recarrega um driver |
-| `drivers remove <id>` | Remove um driver (requer admin) |
+| `drivers install <arquivo.inf/.run/módulo>` | Instala um driver (requer admin) |
+| `drivers update <id> [--inf novo]` | Atualiza/recarrega um driver |
+| `drivers remove <id> [--force]` | Remove um driver (requer admin) |
+| `modules [--install/--remove]` | Módulos do kernel (Linux) |
 | `catalog update` | Busca a lista de fontes oficiais mais recente |
 | `catalog search <termo>` | Procura drivers oficiais no catálogo |
 | `catalog show [categoria]` | Lista entradas do catálogo |
-| `web` | Sobe a interface gráfica local |
+| `history [--term]` | Histórico/auditoria de operações |
+| `backup [destino]` | Backup completo (banco + inventário) |
+| `restore <origem>` | Restaura o banco (requer admin) |
 | `doctor` | Diagnóstico do ambiente e permissões |
+| `admin` | Reexecuta elevado (UAC / pkexec / sudo) |
+| `upgrade` | Auto-atualização via git (checkout) |
+| `export [arquivo.json]` | Exporta relatório JSON do sistema |
+| `--json` | Qualquer comando pode emitir JSON (`driverhub scan --json`) |
+| `web` | Sobe a interface gráfica local |
 
 ## Interface web
 
 A interface web é servida localmente (`http://localhost:8000`) e respondida em
 qualquer dispositivo da rede. No celular, basta acessar o endereço `http://<IP
-da máquina>:8000`. Funciona em qualquer navegador — Android, iOS, Windows,
-Linux, macOS.
+da máquina>:8000` (um QR Code é impresso no terminal quando o pacote `qrcode`
+está instalado). Funciona em qualquer navegador — Android, iOS, Windows,
+Linux, macOS. Painéis: visão geral (com alertas de dispositivos com problema),
+dispositivos, drivers (instalar/atualizar/remover), catálogo oficial,
+hardware, histórico.
 
 ## Nota de segurança
 

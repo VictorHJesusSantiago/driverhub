@@ -26,68 +26,111 @@ def build_parser() -> argparse.ArgumentParser:
                "  driverhub drivers remove oem10.inf\n"
                "  driverhub catalog update\n"
                "  driverhub web [--port 8000]\n"
-               "  driverhub doctor",
+               "  driverhub doctor\n"
+               "  driverhub check\n"
+               "  driverhub backup\n"
+               "  driverhub admin\n",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+
     p.add_argument("--version", action="version", version=f"DriverHub {__version__}")
-    p.add_argument("--db", default=None, help="Caminho opcional do banco de dados SQLite.")
-    p.add_argument("--json", action="store_true", help="Saída em JSON (para scripts/automação).")
+
+    def add_globals(sp: argparse.ArgumentParser, suppress: bool = False) -> None:
+        # SUPPRESS (subparsers): não sobrescreve o valor já definido na raiz.
+        sp.add_argument("--db",
+                        default=argparse.SUPPRESS if suppress else None,
+                        help="Caminho opcional do banco de dados SQLite.")
+        sp.add_argument("--json", action="store_true",
+                        default=argparse.SUPPRESS if suppress else False,
+                        help="Saída em JSON (para scripts/automação).")
+
+    add_globals(p, suppress=False)
     sub = p.add_subparsers(dest="command", title="comandos")
 
-    sub.add_parser("scan", help="Escaneia SO, hardware e drivers instalados.")
-    sub.add_parser("doctor", help="Diagnóstico de ambiente e permissões.")
-    sub.add_parser("info", help="Informações do SO/hardware em detalhe.")
+    def mk(name: str, help_: str, **kw) -> argparse.ArgumentParser:
+        sp = sub.add_parser(name, help=help_, **kw)
+        add_globals(sp, suppress=True)
+        return sp
 
-    drv = sub.add_parser("drivers", help="Gerenciar drivers instalados.")
+    sp_scan = mk("scan", "Escaneia SO, hardware e drivers instalados.")
+    sp_doctor = mk("doctor", "Diagnóstico de ambiente e permissões.")
+    sp_info = mk("info", "Informações do SO/hardware em detalhe.")
+
+    drv = mk("drivers", "Gerenciar drivers instalados.")
     drv_sub = drv.add_subparsers(dest="drv_command", title="ações")
-    drv_sub.add_parser("list", help="Listar drivers instalados.")
-    di = drv_sub.add_parser("info", help="Detalhes de um driver.")
+    mk_d = lambda nm, h: drv_sub.add_parser(nm, help=h,
+                                            formatter_class=argparse.RawDescriptionHelpFormatter)
+    d0 = mk_d("list", "Listar drivers instalados.")
+    add_globals(d0)
+    di = mk_d("info", "Detalhes de um driver.")
     di.add_argument("id")
-    drv_sub.add_parser("system", help="Listar drivers do sistema (Windows).")
-    ins = drv_sub.add_parser("install", help="Instalar driver (.inf/.run/módulo).")
+    add_globals(di)
+    ds = mk_d("system", "Listar drivers do sistema (Windows).")
+    add_globals(ds)
+    ins = mk_d("install", "Instalar driver (.inf/.run/módulo).")
     ins.add_argument("target", help="Arquivo .inf (Win) / .run (Linux) / nome do módulo")
     ins.add_argument("--permanent", action="store_true", help="Persistir módulo (Linux).")
-    upd = drv_sub.add_parser("update", help="Atualizar/recarregar driver.")
+    add_globals(ins)
+    upd = mk_d("update", "Atualizar/recarregar driver.")
     upd.add_argument("id")
     upd.add_argument("--inf", default=None, help="Novo .inf para reinstalar.")
-    rem = drv_sub.add_parser("remove", help="Remover driver (requer admin).")
+    add_globals(upd)
+    rem = mk_d("remove", "Remover driver (requer admin).")
     rem.add_argument("id")
     rem.add_argument("--force", action="store_true", help="Forçar remoção (/force no pnputil).")
+    add_globals(rem)
 
-    mods = sub.add_parser("modules", help="Módulos do kernel (Linux).")
+    mods = mk("modules", "Módulos do kernel (Linux).")
     mods.add_argument("--install", help="Carregar módulo")
     mods.add_argument("--remove", help="Descarregar módulo")
     mods.add_argument("--permanent", action="store_true")
 
-    cat = sub.add_parser("catalog", help="Catálogo de drivers (fontes oficiais).")
+    cat = mk("catalog", "Catálogo de drivers (fontes oficiais).")
     cat_sub = cat.add_subparsers(dest="cat_command", title="ações")
-    cat_sub.add_parser("update", help="Atualizar catálogo a partir das fontes oficiais.")
-    cs = cat_sub.add_parser("search", help="Procurar no catálogo.")
+    mk_c = lambda nm, h: cat_sub.add_parser(nm, help=h)
+    c0 = mk_c("update", "Atualizar catálogo a partir das fontes oficiais.")
+    add_globals(c0)
+    cs = mk_c("search", "Procurar no catálogo.")
     cs.add_argument("term")
     cs.add_argument("--os", default="", help="Filtrar por SO (ex.: Windows, Linux)")
-    cshow = cat_sub.add_parser("show", help="Listar catálogo.")
+    add_globals(cs)
+    cshow = mk_c("show", "Listar catálogo.")
     cshow.add_argument("category", nargs="?", default="")
     cshow.add_argument("--manifest", default=catalog_mod.DEFAULT_MANIFEST,
                        help="URL de manifesto remoto.")
-    cat_sub.add_parser("categories", help="Listar categorias.")
+    add_globals(cshow)
+    c4 = mk_c("categories", "Listar categorias.")
+    add_globals(c4)
 
-    hist = sub.add_parser("history", help="Histórico de operações.")
+    hist = mk("history", "Histórico de operações.")
     hist.add_argument("--limit", type=int, default=50)
     hist.add_argument("--term", default="")
 
-    stats = sub.add_parser("stats", help="Estatísticas do banco.")
+    stats = mk("stats", "Estatísticas do banco.")
 
-    dev = sub.add_parser("devices", help="Inventário de dispositivos (PNP/PCI/USB).")
+    dev = mk("devices", "Inventário de dispositivos (PNP/PCI/USB).")
     dev.add_argument("--kind", default="", help="Filtrar por tipo (gpu, audio, ...)")
 
-    web = sub.add_parser("web", help="Iniciar interface gráfica web (PC ou celular).")
+    web = mk("web", "Iniciar interface gráfica web (PC ou celular).")
     web.add_argument("--port", type=int, default=8000)
     web.add_argument("--host", default="0.0.0.0")
     web.add_argument("--no-browser", action="store_true",
                      help="Não abrir o navegador automaticamente.")
 
-    export = sub.add_parser("export", help="Exportar relatório JSON do sistema.")
+    export = mk("export", "Exportar relatório JSON do sistema.")
     export.add_argument("output", nargs="?", default=None)
+
+    _ = mk("admin", "Reinicia com privilégios de administrador (UAC/pkexec/sudo).")
+
+    _ = mk("check", "Verificação de saúde: dispositivos com problema + sugestões.")
+
+    backup = mk("backup", "Cria um backup completo (banco + inventário).")
+    backup.add_argument("dest", nargs="?", default=None)
+
+    restore = mk("restore", "Restaura o banco a partir de um backup.")
+    restore.add_argument("source")
+
+    _ = mk("upgrade", "Auto-atualização via git (checkout).")
     return p
 
 
@@ -162,6 +205,16 @@ def run(argv: Optional[List[str]] = None) -> int:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2, default=str)
             ui.ok(f"Relatório exportado: {os.path.abspath(path)}")
+        elif args.command == "admin":
+            _cmd_admin(args)
+        elif args.command == "check":
+            _cmd_check(args, db)
+        elif args.command == "backup":
+            _cmd_backup(args, db)
+        elif args.command == "restore":
+            _cmd_restore(args, db)
+        elif args.command == "upgrade":
+            _cmd_upgrade(args, db)
         else:
             parser.print_help()
     finally:
@@ -393,6 +446,88 @@ def _cmd_web(args: argparse.Namespace, db: Database) -> int:
     return 0
 
 
+def _cmd_admin(args: argparse.Namespace) -> int:
+    info = platform.detect_os()
+    if info["admin"]:
+        ui.ok("Já está em modo administrador/root.")
+        return 0
+    res = actions.relaunch_admin()
+    _emit(args, res)
+    if res.get("ok"):
+        ui.ok(res.get("detail", "Elevação solicitada."))
+        return 0
+    ui.fail(res.get("detail", "Não foi possível elevar privilégios."))
+    return 1
+
+
+def _cmd_check(args: argparse.Namespace, db: Database) -> int:
+    if not args.json:
+        ui.out(f"[bold cyan]{ui._ARROW} Verificando saúde do sistema...[/bold cyan]" if ui._RICH
+               else f"{ui._ARROW} Verificando saúde do sistema...")
+    report = actions.run_check(db)
+    _emit(args, report)
+    if args.json:
+        return 0
+    ui.kv("Verificação de saúde", {
+        "Sistema": f"{report['os']['name']} ({report['os']['release']})",
+        "Admin": "Sim" if report["admin"]["admin"] else "Não",
+        "Dispositivos": report["devices"],
+        "Drivers gerenciáveis": report["drivers"],
+        "Problemas encontrados": report["problems_count"],
+        "Sugestões do catálogo": report["suggestions_count"],
+    })
+    if report["problems"]:
+        ui.table("Dispositivos com problema", ["Tipo", "Dispositivo", "Fabricante"],
+                 [[p.get("kind", ""), p.get("name", "")[:50], p.get("vendor", "")[:30]]
+                  for p in report["problems"][:50]])
+    if report["suggestions"]:
+        ui.table("Sugestões de drivers oficiais", ["Dispositivo", "Fabricante", "Download"],
+                 [[s["device"][:40], s["catalog"]["vendor"], s["catalog"]["url"]]
+                  for s in report["suggestions"][:20]])
+    if not report["problems"]:
+        ui.ok("Nenhum dispositivo com problema detectado.")
+        return 0
+    ui.warn("Verifique os dispositivos com problema e instale os drivers oficiais indicados.")
+    return 1
+
+
+def _cmd_backup(args: argparse.Namespace, db: Database) -> int:
+    if not args.json:
+        ui.out("Criando backup...")
+    res = actions.run_backup(db, args.dest)
+    _emit(args, res)
+    if res.get("ok"):
+        ui.ok(res.get("detail", "Backup criado."))
+        return 0
+    ui.fail(res.get("detail", "Falha no backup."))
+    return 1
+
+
+def _cmd_restore(args: argparse.Namespace, db: Database) -> int:
+    if not _confirm(f"Restaurar o banco a partir de '{args.source}'? Isso substituirá o atual."):
+        ui.warn("Cancelado.")
+        return 1
+    res = actions.run_restore(db, args.source)
+    _emit(args, res)
+    if res.get("ok"):
+        ui.ok(res.get("detail", "Restaurado."))
+        return 0
+    ui.fail(res.get("detail", "Falha na restauração."))
+    return 1
+
+
+def _cmd_upgrade(args: argparse.Namespace, db: Database) -> int:
+    if not args.json:
+        ui.out("Verificando atualizações (git pull)...")
+    res = actions.run_upgrade()
+    _emit(args, res)
+    if res.get("ok"):
+        ui.ok(res.get("detail", "Pronto."))
+        return 0
+    ui.warn(res.get("detail", ""))
+    return 1
+
+
 def _confirm(prompt: str) -> bool:
     if os.isatty(0):
         try:
@@ -405,12 +540,10 @@ def _confirm(prompt: str) -> bool:
 
 def banner() -> None:
     if ui._RICH:
-        ui.out("[bold magenta]  ___  _               _       _        _[/bold magenta]")
-        ui.out("[bold magenta] |  _|| |__ _ _ _  __| |  __ | |_ ___ | |__[/bold magenta]")
-        ui.out("[bold magenta] | || | |  _| ' \\/ _` | / _|  _|  -_) || . \\[/bold magenta]")
-        ui.out("[bold magenta] |___|_|_| |_||_\\__,_| \\__|\\__|_|_|___/ \\__/[/bold magenta]")
-        ui.out(f"[cyan]  Gerenciador universal de drivers v{__version__}[/cyan] "
-               "[grey]— fontes oficiais · terminal + web[/grey]")
+        ui.out("[bold magenta]   DriverHub[/bold magenta] "
+               f"[bold white]v{__version__}[/bold white]")
+        ui.out("[cyan]   Gerenciador universal de drivers[/cyan] "
+               "[grey]— fontes oficiais · terminal + web · multiplataforma[/grey]")
     else:
         print(f"DriverHub v{__version__} — gerenciador universal de drivers")
 

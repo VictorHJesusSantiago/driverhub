@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "driverhub"
+version = "0.9.0"
+description = "DriverHub - gerenciador universal de drivers (fontes oficiais, terminal + interface web)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "DriverHub contributors" }]
+keywords = ["driver", "drivers", "pnputil", "kernel modules", "catalog", "cross-platform"]
+classifiers = [
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = []
+optional-dependencies = { "full" = ["rich>=13", "psutil>=5.9", "requests>=2.31"] }
+
+[project.scripts]
+driverhub = "driverhub.cli:run"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["driverhub*"]
+
+[tool.setuptools.package-data]
+"driverhub.web" = ["static/*"]
