@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1220">
+  <title>DriverHub — Gerenciador de Drivers</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128187;</text></svg>">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app">
+    <aside id="sidebar" class="sidebar">
+      <div class="brand">
+        <div class="logo">DH</div>
+        <div class="brand-text">
+          <h1>DriverHub</h1>
+          <span id="brand-sub">gerenciador de drivers</span>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard"><span class="ico">◧</span> Painel</button>
+        <button class="nav-item" data-view="devices"><span class="ico">🖥️</span> Dispositivos</button>
+        <button class="nav-item" data-view="drivers"><span class="ico">🧩</span> Drivers</button>
+        <button class="nav-item" data-view="catalog"><span class="ico">📦</span> Catálogo</button>
+        <button class="nav-item" data-view="hardware"><span class="ico">⚙️</span> Hardware</button>
+        <button class="nav-item" data-view="history"><span class="ico">📜</span> Histórico</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div id="admin-badge" class="badge">...</div>
+        <div id="os-badge" class="badge muted">...</div>
+        <button class="nav-item ghost" data-view="about"><span class="ico">ℹ️</span> Sobre</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button id="burger" class="burger" aria-label="menu">☰</button>
+        <div>
+          <h2 id="page-title">Painel</h2>
+          <p id="page-sub">Visão geral do sistema</p>
+        </div>
+        <div class="topbar-actions">
+          <button id="btn-scan" class="btn primary"><span class="ico">⟳</span> Escanear</button>
+          <button id="btn-cat-update" class="btn" title="Atualizar catálogo de fontes oficiais"><span class="ico">⇅</span> Catálogo</button>
+        </div>
+      </header>
+
+      <section id="view-dashboard" class="view active">
+        <div id="os-card" class="card hero"></div>
+        <div id="stat-cards" class="grid cards"></div>
+        <div class="grid two">
+          <div class="card"><h3>Drivers por categoria</h3><div id="chart-classes" class="chart"></div></div>
+          <div class="card"><h3>Dispositivos por tipo</h3><div id="chart-kinds" class="chart"></div></div>
+        </div>
+        <div class="card"><h3>Atividade recente</h3><div id="recent" class="table-wrap"></div></div>
+      </section>
+
+      <section id="view-devices" class="view">
+        <div class="toolbar">
+          <input id="dev-filter-kind" class="input" placeholder="Filtrar tipo (gpu, audio, rede...)">
+          <button id="dev-apply" class="btn">Filtrar</button>
+        </div>
+        <div class="card"><div id="devices-list" class="table-wrap"></div></div>
+      </section>
+
+      <section id="view-drivers" class="view">
+        <div class="toolbar">
+          <input id="drv-search" class="input" placeholder="Buscar driver...">
+          <select id="drv-class" class="input select">
+            <option value="">Todas as classes</option>
+          </select>
+          <button id="drv-apply" class="btn">Buscar</button>
+          <button id="drv-install" class="btn success">+ Instalar .inf</button>
+        </div>
+        <div class="card">
+          <div id="drivers-list" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <section id="view-catalog" class="view">
+        <div class="toolbar">
+          <input id="cat-search" class="input" placeholder="Buscar no catálogo (ex.: nvidia)">
+          <select id="cat-category" class="input select">
+            <option value="">Todas as categorias</option>
+          </select>
+          <button id="cat-apply" class="btn">Buscar</button>
+        </div>
+        <div class="card">
+          <div class="hint">Fontes 100% oficiais. Clique em um link para abrir o download oficial do fabricante no navegador.</div>
+          <div id="catalog-list" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <section id="view-hardware" class="view">
+        <div class="card"><h3>Informações do hardware</h3><div id="hardware-box" class="pre"></div></div>
+      </section>
+
+      <section id="view-history" class="view">
+        <div class="toolbar">
+          <input id="hist-term" class="input" placeholder="Buscar no histórico...">
+          <button id="hist-apply" class="btn">Filtrar</button>
+        </div>
+        <div class="card"><div id="history-list" class="table-wrap"></div></div>
+      </section>
+
+      <section id="view-about" class="view">
+        <div class="card"><div id="about-box"></div></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <h3 id="modal-title">Ação</h3>
+      <p id="modal-text" class="pre"></p>
+      <div id="modal-inputs"></div>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn">Cancelar</button>
+        <button id="modal-ok" class="btn danger">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <div id="busy" class="busy hidden"><div class="spinner"></div><span>Processando...</span></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
