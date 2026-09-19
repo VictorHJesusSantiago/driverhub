@@ -1,0 +1,11 @@
+{
+  "accent": "#00e5a0",
+  "accent2": "#7cffcb",
+  "ok": "spring_green2",
+  "warn": "dark_goldenrod",
+  "error": "medium_violet_red",
+  "info": "deep_sky_blue2",
+  "muted": "dim",
+  "title": "bold spring_green3",
+  "table_header": "spring_green3"
+}
